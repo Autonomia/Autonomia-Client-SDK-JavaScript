@@ -1,0 +1,15 @@
+{
+    "compilerOptions": {
+        "module": "none",
+        "removeComments": true,
+        "outFile": "Autonomia-API-JavaScript.js",
+        "sourceMap": true,
+        "declaration": true
+    },
+    "include": [
+        "*.ts"
+    ],
+    "exclude": [
+        "*.d.ts"
+    ]
+}
