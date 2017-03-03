@@ -127,7 +127,7 @@ namespace Autonomia {
                             response.forEach((device) => {
                                 var d = new Models.Device();
                                 d.Id = device.serial;
-                                d.Type = device.category.name;
+                                d.Type = Helpers.IsNullOrEmpty(device.category) ? "" : device.category.name;
 
                                 d.IsConnected = device.connected;
                                 d.ConnectedAt = device.connectedAt;
