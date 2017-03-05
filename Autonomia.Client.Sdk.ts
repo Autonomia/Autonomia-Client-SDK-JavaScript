@@ -1,25 +1,28 @@
-/// <reference path="Autonomia.Config.ts" /> 
-/// <reference path="Autonomia.Models.Device.ts" /> 
+/// <reference path="Autonomia.Client.Sdk.Config.ts" /> 
+/// <reference path="Autonomia.Client.Sdk.Models.Device.ts" /> 
 
-/// <reference path="../Autonomia-Helpers-JavaScript/Autonomia-Helpers-JavaScript.d.ts" />
-
-namespace Autonomia {
+namespace Autonomia.Client.Sdk.Client {
     export class Api {
         private _config: Config;
+        
         private _urls: {
             AccessToken: string,
             Devices: string,
             Subscribe1: string
             Subscribe2: string
         }
+        
         private _token: {
             Value: string,
             Type: string
         };
+
         private _timeouts: {
             timeout_device_not_attached: number,
             timeout_websocket_reconnect: number
         };
+
+        private _socketByDeviceId: any;
 
         public Events: {
             DeviceConnected: Helpers.Events.Event<string>,
@@ -45,6 +48,8 @@ namespace Autonomia {
                 timeout_device_not_attached: 30000,
                 timeout_websocket_reconnect: 1000
             };
+
+            this._socketByDeviceId = {};
 
             this.Events = {
                 DeviceConnected         : new Helpers.Events.Event<string>(),
@@ -176,6 +181,21 @@ namespace Autonomia {
             });
         }
 
+        public StopDevicesNotifications(deviceId) {
+            try {
+                this._socketByDeviceId[deviceId].close();
+            }
+            catch(e) {
+                console.error("StopDevicesNotifications() -> " + e);
+            }
+        }
+
+        public StopAllDevicesNotifications() {
+            for (var deviceId in this._socketByDeviceId) {
+                this.StopDevicesNotifications(deviceId);
+            }
+        }
+
         private GetWebsocketUrlForDevice(deviceId: string, waitTimeOut: number, callback) {
             var thisRef = this;
 
@@ -234,6 +254,7 @@ namespace Autonomia {
             var webSocket = new WebSocket(url);
 
             webSocket.onopen = function (event) {
+                thisRef._socketByDeviceId[deviceId] = webSocket;
                 thisRef.Events.DeviceConnected.Notify(deviceId);
             };
 

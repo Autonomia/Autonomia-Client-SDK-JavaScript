@@ -1,4 +1,4 @@
-namespace Autonomia.Models {
+namespace Autonomia.Client.Sdk.Models {
     export class Camera {
         public Id: string;
         public Name: string;

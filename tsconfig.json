@@ -2,7 +2,7 @@
     "compilerOptions": {
         "module": "none",
         "removeComments": true,
-        "outFile": "Autonomia-API-JavaScript.js",
+        "outFile": "Autonomia-Client-SDK-JavaScript.js",
         "sourceMap": true,
         "declaration": true
     },

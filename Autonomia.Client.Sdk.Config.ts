@@ -1,4 +1,4 @@
-namespace Autonomia {
+namespace Autonomia.Client.Sdk {
     export class Config {
         public AppKey: string;
         public AppSecret: string;

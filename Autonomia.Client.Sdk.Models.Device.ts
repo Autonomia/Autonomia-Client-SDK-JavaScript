@@ -1,4 +1,4 @@
-namespace Autonomia.Models {
+namespace Autonomia.Client.Sdk.Models {
     export class Device {
         public Id: string;
         public Type: string;
