@@ -25,11 +25,13 @@ Autonomia.Client.Sdk.Client()
 ```
 
 # ![](https://storage.googleapis.com/material-icons/external-assets/v4/icons/svg/ic_flash_on_black_24px.svg) Events
-![](https://storage.googleapis.com/material-icons/external-assets/v4/icons/svg/ic_keyboard_arrow_right_black_24px.svg) `DeviceConnected`
-![](https://storage.googleapis.com/material-icons/external-assets/v4/icons/svg/ic_keyboard_arrow_right_black_24px.svg) `DeviceDisconnected`
-![](https://storage.googleapis.com/material-icons/external-assets/v4/icons/svg/ic_keyboard_arrow_right_black_24px.svg) `DeviceConnectionError`
-![](https://storage.googleapis.com/material-icons/external-assets/v4/icons/svg/ic_keyboard_arrow_right_black_24px.svg) `DeviceMessage`
-![](https://storage.googleapis.com/material-icons/external-assets/v4/icons/svg/ic_keyboard_arrow_right_black_24px.svg) `DeviceInvalidMessage`
+```javascript
+DeviceConnected
+DeviceDisconnected
+DeviceConnectionError
+DeviceMessage
+DeviceInvalidMessage
+```
 
 # ![](https://storage.googleapis.com/material-icons/external-assets/v4/icons/svg/ic_code_black_24px.svg) Code Samples
 - For a complete examample chek [this](https://github.com/Autonomia/Autonomia-Client-Sample-Browser)
