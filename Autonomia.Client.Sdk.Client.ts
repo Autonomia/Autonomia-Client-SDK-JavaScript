@@ -1,8 +1,8 @@
 /// <reference path="Autonomia.Client.Sdk.Config.ts" /> 
 /// <reference path="Autonomia.Client.Sdk.Models.Device.ts" /> 
 
-namespace Autonomia.Client.Sdk.Client {
-    export class Api {
+namespace Autonomia.Client.Sdk {
+    export class Client {
         private _config: Config;
         
         private _urls: {
