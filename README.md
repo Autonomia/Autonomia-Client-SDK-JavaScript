@@ -89,7 +89,7 @@ var autonomiaClient = new AutonomiaSdk.Client(autonomiaConfig);
         });
 ```
 
-# ![](https://storage.googleapis.com/material-icons/external-assets/v4/icons/svg/ic_code_black_24px.svg) Develop
+# ![](https://storage.googleapis.com/material-icons/external-assets/v4/icons/svg/ic_build_black_24px.svg) Develop
 - Expects to be installed: `node`
 - `git clone https://github.com/Autonomia/Autonomia-Client-SDK-JavaScript.git`
 - Run `npm install` once
