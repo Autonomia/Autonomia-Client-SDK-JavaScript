@@ -1,0 +1,20 @@
+{
+    "name": "autonomia-client-sdk-javascript",
+    "version": "1.0.0",
+    "description": "",
+    "author": "Visible Energy, Inc.",
+    "license": "ISC",
+
+    "dependencies": {
+        "asynquence": "*",
+        "node-uuid": "*"
+    },
+
+    "devDependencies": {
+        "typescript": "*"
+    },
+
+    "scripts": {
+        "build": "./node_modules/.bin/tsc && mv Autonomia-Client-SDK-JavaScript.js Autonomia-Client-SDK-JavaScript.js_ && cat asq.min.js > Autonomia-Client-SDK-JavaScript.js && cat uuid.min.js >> Autonomia-Client-SDK-JavaScript.js && cat Autonomia-Client-SDK-JavaScript.js_ >> Autonomia-Client-SDK-JavaScript.js && rm Autonomia-Client-SDK-JavaScript.js_"
+    }
+}
