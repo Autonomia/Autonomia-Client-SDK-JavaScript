@@ -196,6 +196,22 @@ namespace Autonomia.Client.Sdk {
             }
         }
 
+        public Execute(deviceId: string, rpcDetails: any) {
+            try {
+                var data = JSON.stringify({
+                    "jsonrpc": "2.0",
+                    "method": rpcDetails.Method,
+                    "params": rpcDetails.Params,
+                    "id": 7
+                });
+
+                this._socketByDeviceId[deviceId].write(data);
+            }
+            catch(e) {
+                console.error("Execute() -> " + e);
+            }
+        }
+
         private GetWebsocketUrlForDevice(deviceId: string, waitTimeOut: number, callback) {
             var thisRef = this;
 
