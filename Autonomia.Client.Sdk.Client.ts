@@ -205,7 +205,7 @@ namespace Autonomia.Client.Sdk {
                     "id": 7
                 });
 
-                this._socketByDeviceId[deviceId].write(data);
+                this._socketByDeviceId[deviceId].send(data);
             }
             catch(e) {
                 console.error("Execute() -> " + e);
