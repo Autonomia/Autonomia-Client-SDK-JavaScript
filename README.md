@@ -48,34 +48,34 @@ var autonomiaConfig = new AutonomiaSdk.Config();
 var autonomiaClient = new AutonomiaSdk.Client(autonomiaConfig);
 
     autonomiaClient.Events.DeviceConnected.OnHappen((deviceId) => {
-        thisRef.DeviceConnected(deviceId);
+        console.log("DeviceConnected: " + deviceId);
     });
 
     autonomiaClient.Events.DeviceDisconnected.OnHappen((messageObject) => {
-        thisRef.DeviceDisconnected(messageObject);
+        console.log("DeviceDisconnected: " + JSON.stringify(messageObject));
     });
 
     autonomiaClient.Events.DeviceConnectionError.OnHappen((messageObject) => {
-        thisRef.DeviceConnectionError(messageObject.DeviceId, messageObject.Error);
+        console.log("DeviceConnectionError: " + JSON.stringify(messageObject));
     });
 
     autonomiaClient.Events.DeviceMessage.OnHappen((messageObject) => {
-        thisRef.DeviceMessage(messageObject.DeviceId, messageObject.Message);
+        console.log("DeviceMessage: " + JSON.stringify(messageObject));
     });
 
     autonomiaClient.Events.DeviceInvalidMessage.OnHappen((data) => {
-        thisRef.DeviceInvalidMessage(data);
+        console.log("DeviceInvalidMessage: " + JSON.stringify(data));
     });
 
     var foundDevices = [];
     AutonomiaSdk.Helpers.Tasks.Run()
         .This((done) => {
             console.log("Connecting to Autonomia");
-            thisRef._autonomia.Connect(done);
+            autonomiaClient.Connect(done);
         })
         .Then((done) => {
             console.log("Connected, Getting registered devices");
-            thisRef._autonomia.GetDevices(done, foundDevices);
+            autonomiaClient.GetDevices(done, foundDevices);
         })
         .Then((done) => {
             foundDevices.forEach((device) => {
@@ -84,7 +84,7 @@ var autonomiaClient = new AutonomiaSdk.Client(autonomiaConfig);
 
             console.log("Subscribing for device events");
 
-            thisRef._autonomia.GetNotificationsForDevices(foundDevices);
+            autonomiaClient.GetNotificationsForDevices(foundDevices);
         })
         .OnError((error) => {
             console.errror(error);
