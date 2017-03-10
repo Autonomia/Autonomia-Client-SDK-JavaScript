@@ -1,5 +1,7 @@
-# ![](https://storage.googleapis.com/material-icons/external-assets/v4/icons/svg/ic_info_outline_black_24px.svg) What
-Autonomia Client SDK for JavaScript
+# ![](https://storage.googleapis.com/material-icons/external-assets/v4/icons/svg/ic_info_outline_black_24px.svg) Autonomia Client SDK for JavaScript
+Provides a simple wrapper around [Autonomia Client Side API](http://www.autonomia.io). Typical use would be to develop a connected application running anywhere but vehicle on-board computer.
+
+It allows to connect to the Autonomia Cloud infrastructure and make remote interactions with the vehicle.
 
 # ![](https://storage.googleapis.com/material-icons/external-assets/v4/icons/svg/ic_cloud_queue_black_24px.svg) Include Hosted
 - Add to HTML
@@ -34,7 +36,7 @@ DeviceInvalidMessage
 ```
 
 # ![](https://storage.googleapis.com/material-icons/external-assets/v4/icons/svg/ic_code_black_24px.svg) Code Samples
-- For a complete examample chek [this](https://github.com/Autonomia/Autonomia-Client-Sample-Browser)
+- For a complete examample chek [**this**](https://github.com/Autonomia/Autonomia-Client-Sample-Browser). Get your API key [**@DeveloperPortal**](https://developer.autonomia.io)
 ```javascript
 let AutonomiaSdk = Autonomia.Client.Sdk;
 
