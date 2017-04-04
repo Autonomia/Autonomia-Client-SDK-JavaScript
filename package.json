@@ -15,6 +15,9 @@
     },
 
     "scripts": {
-        "build": "./node_modules/.bin/tsc && mv Autonomia-Client-SDK-JavaScript.js Autonomia-Client-SDK-JavaScript.js_ && cat asq.min.js > Autonomia-Client-SDK-JavaScript.js && cat uuid.min.js >> Autonomia-Client-SDK-JavaScript.js && cat Autonomia-Client-SDK-JavaScript.js_ >> Autonomia-Client-SDK-JavaScript.js && rm Autonomia-Client-SDK-JavaScript.js_"
+        "private_embedd_asq": "cat asq.min.js     >  Autonomia-Client-SDK-JavaScript.js",
+        "private_embedd_uuid": "cat uuid.min.js   >> Autonomia-Client-SDK-JavaScript.js",
+        "private_embedd_axios": "cat axios.min.js >> Autonomia-Client-SDK-JavaScript.js",
+        "build": "./node_modules/.bin/tsc && mv Autonomia-Client-SDK-JavaScript.js Autonomia-Client-SDK-JavaScript.js_ && npm run private_embedd_asq && npm run private_embedd_uuid && npm run private_embedd_axios && cat Autonomia-Client-SDK-JavaScript.js_ >> Autonomia-Client-SDK-JavaScript.js && rm Autonomia-Client-SDK-JavaScript.js_"
     }
 }

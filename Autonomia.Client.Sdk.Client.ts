@@ -1,22 +1,23 @@
-/// <reference path="Autonomia.Client.Sdk.Config.ts" /> 
+
 /// <reference path="Autonomia.Client.Sdk.Models.Device.ts" /> 
 
 namespace Autonomia.Client.Sdk {
     export class Client {
-        private _config: Config;
-        
+
+        // DELETE-ME:
+        private _userEmail: string;
+        private _userPassword: string;
+        private _userAppList: any[];
+
+        private _apiServer: string;
+        private _userLoginToken: string = null;
+
         private _urls: {
-            AccessToken: string,
             Devices: string,
             Subscribe1: string
             Subscribe2: string
         }
         
-        private _token: {
-            Value: string,
-            Type: string
-        };
-
         private _timeouts: {
             timeout_device_not_attached: number,
             timeout_websocket_reconnect: number
@@ -32,17 +33,31 @@ namespace Autonomia.Client.Sdk {
             DeviceInvalidMessage: Helpers.Events.Event<any>
         }
 
-        constructor(config: Config) {
-            this._config = config;
+        constructor() {
+            this.SetApiServer("api.autonomia.io");
+        }
 
-            this._urls = {
-                AccessToken  : "https://" + this._config.Server + "/v1/api/auth/token",
-                Devices      : "https://" + this._config.Server + "/v1/api/devices",
-                Subscribe1   : "https://" + this._config.Server + "/v1/api/devices/",
-                Subscribe2   : "/subscribe"
+        private static _clientInstance: Client = null;
+        public static GetInstance() {
+            if (Helpers.IsNullOrEmpty(Client._clientInstance)) {
+                Client._clientInstance = new Client();
             }
 
-            this._token = null;
+            return Client._clientInstance;
+        }
+
+        // @ Helpers
+        // ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~
+        public SetApiServer(apiServer: string) {
+            var thisRef = this;
+
+            thisRef._apiServer = apiServer;
+
+            this._urls = {
+                Devices      : "https://" + thisRef._apiServer + "/v1/api/devices",
+                Subscribe1   : "https://" + thisRef._apiServer + "/v1/api/devices/",
+                Subscribe2   : "/subscribe"
+            }
 
             this._timeouts = {
                 timeout_device_not_attached: 30000,
@@ -59,104 +74,256 @@ namespace Autonomia.Client.Sdk {
                 DeviceInvalidMessage    : new Helpers.Events.Event<any>()
             }
         }
+        private GetUrls_User_R() {
+            return {
+                R: "https://" + this._apiServer + "/v1/api/auth/signin"
+            };
+        }
+        private GetUrls_Applications_CRUD_LT(appId: string=null) {
+            return {
+                C: "https://" + this._apiServer + "/v1/api/applications",
+                R: "https://" + this._apiServer + "/v1/api/applications/" + appId,
+                U: "https://" + this._apiServer + "/v1/api/applications/" + appId,
+                D: "https://" + this._apiServer + "/v1/api/applications/" + appId,
 
-        private GetAccessToken(done) {
+                L: "https://" + this._apiServer + "/v1/api/applications", // List All Apps
+                T: "https://" + this._apiServer + "/v1/api/auth/token"    // Get Access Token
+            };
+        }
+        private GetUrls_Device_V(deviceId: string=null) {
+            return {
+                V: "https://" + this._apiServer + "/v1/api/devices/" + deviceId + "/video"
+            };
+        }
+
+
+        // @ User
+        // ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~
+        public UserLogin(done, user: string, pass: string) {
+            var thisRef = this;
+
+            thisRef._userEmail = user;
+            thisRef._userPassword = pass;
+
+            var headers = {
+                "Content-Type": "application/json"
+            };
+            var dataToSend = {
+                "email": user,
+                "password": pass
+            };
+
+            Helpers.GetPost.DoPostCall(
+                thisRef.GetUrls_User_R().R,
+                headers,
+                JSON.stringify(dataToSend),
+                (dataReceived) => {
+                    thisRef._userLoginToken = dataReceived.token;
+                    thisRef._userAppList = dataReceived.applications;
+                    done();
+                },
+                (error) => {
+                    done.fail("Login() -> [" + error + "]");
+                }
+            );
+        }
+
+        public IsAuthenticated() {
+            return (this._userLoginToken !== null);
+        }
+
+
+        // @ Applications
+        // ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~
+        public AppCreate(done, appName: string, appIdContainer: any) {
+            var thisRef = this;
+
+            var headers = {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + thisRef._userLoginToken
+            };
+
+            var appKey = Helpers.Strings.ReplaceAll(Helpers.NewGuid(), "-", "");
+            var appSecret = Helpers.Strings.ReplaceAll(Helpers.NewGuid(), "-", "");
+
+            var dataToSend = {
+                "name": appName,
+                "appKey": appKey,
+                "appSecret": appSecret
+            };
+
+            Helpers.GetPost.DoPostCall(
+                thisRef.GetUrls_Applications_CRUD_LT().C,
+                headers,
+                JSON.stringify(dataToSend),
+                (dataReceived) => {
+                    appIdContainer.AppId = dataReceived._id;
+                    done();
+                },
+                (error) => {
+                    done.fail("AppCreate() -> [" + error + "]");
+                }
+            );
+        }
+        public AppGetInfo(done, appId: string, appInfoContainer: any) {
+            var thisRef = this;
+
+            var headers = {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + thisRef._userLoginToken
+            };
+
+            Helpers.GetPost.DoGetCall(
+                thisRef.GetUrls_Applications_CRUD_LT(appId).R,
+                headers,
+                (dataReceived) => {
+                    appInfoContainer.AppInfo = dataReceived;
+                    done();
+                },
+                (error) => {
+                    done.fail("AppGetInfo() -> [" + error + "]");
+                }
+            );
+        }
+        public AppUpdate(done, appId: string, data: any) {
+            var thisRef = this;
+
+            var headers = {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + thisRef._userLoginToken
+            };
+
+            Helpers.GetPost.DoPutCall(
+                thisRef.GetUrls_Applications_CRUD_LT(appId).U,
+                headers,
+                JSON.stringify(data),
+                (dataReceived) => {
+                    done();
+                },
+                (error) => {
+                    done.fail("AppUpdate() -> [" + error + "]");
+                }
+            );
+        }
+        public AppDelete(done, appId: string) {
+            var thisRef = this;
+
+            var headers = {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + thisRef._userLoginToken
+            };
+
+            Helpers.GetPost.DoDeleteCall(
+                thisRef.GetUrls_Applications_CRUD_LT(appId).D,
+                headers,
+                (dataReceived) => {
+                    done()
+                },
+                (error) => {
+                    done.fail("AppGetInfo() -> [" + error + "]");
+                }
+            );
+        }
+        public AppListAll(parentDone, appsContainer: any) {
+            var thisRef = this;
+
+            var headers = {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer " + thisRef._userLoginToken
+            };
+
+            Helpers.Tasks.Run()
+                .This((done) => {
+                    thisRef.UserLogin(done, thisRef._userEmail, thisRef._userPassword);
+                })
+                .This((done) => {
+                    appsContainer.Apps = thisRef._userAppList;
+                    parentDone();
+                    done();
+                })
+                .OnError((error) => {
+                    console.log(error);
+                });
+        }
+        public AppGetAccessToken(done, appKey: string, appSecret: string, appAccessTokenContainer: any) {
             var thisRef = this;
 
             var headers = {
                 "Content-Type": "application/json"
             };
             var dataToSend = {
-                "app_key": thisRef._config.AppKey,
-                "app_secret": thisRef._config.AppSecret
+                "app_key": appKey,
+                "app_secret": appSecret
             };
 
             Helpers.GetPost.DoPostCall(
-                thisRef._urls.AccessToken,
+                thisRef.GetUrls_Applications_CRUD_LT().T,
                 headers,
                 JSON.stringify(dataToSend),
                 (dataReceived) => {
-                    var response = null;
+                    if (
+                        Helpers.IsNullOrEmpty(dataReceived)
+                        || !dataReceived.hasOwnProperty("access_token")
+                        || !dataReceived.hasOwnProperty("token_type")
+                    ) {
+                        done.fail("Connect() -> [Invalid data received]");
+                    }
+                    else {
+                        appAccessTokenContainer.AppAccessToken = {
+                            Type: dataReceived.token_type,
+                            Value: dataReceived.access_token
+                        };
 
-                    try {
-                        response = JSON.parse(dataReceived);
-                        if (
-                            Helpers.IsNullOrEmpty(response)
-                            || !response.hasOwnProperty("access_token")
-                            || !response.hasOwnProperty("token_type")
-                        ) {
-                            done.fail("GetAccessToken() -> [Invalid data received]");
-                        }
-                        else {
-                            thisRef._token = {
-                                Type  : response.token_type,
-                                Value : response.access_token
-                            };
-
-                            done();
-                        }
-                    } catch (e) {
-                        done.fail("GetAccessToken() -> [" + e + "] -> [" + dataReceived + "]");
+                        done();
                     }
                 },
                 (error) => {
-                    done.fail("GetAccessToken() -> [" + error + "]");
+                    done.fail("Connect() -> [" + error + "]");
                 }
-            );
+            );            
         }
 
-        public Connect(done) {
-            var thisRef = this;
 
-            thisRef.GetAccessToken(done);
-        }
-
-        public GetDevices(done, devicesContainer: Models.Device[]) {
+        // @ Devices
+        // ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~ ~~~~
+        public GetDevices(done, token: string, devicesContainer: Models.Device[]) {
             var thisRef = this;
 
             var headers = {
                 "Content-Type": "application/json",
-                "Authorization": thisRef._token.Type + " " + thisRef._token.Value
+                "Authorization": token
             };
 
             Helpers.GetPost.DoGetCall(
                 thisRef._urls.Devices,
                 headers,
                 (dataReceived) => {
-                    var response = null;
+                    if (!Helpers.IsNullOrEmpty(dataReceived)) {
+                        dataReceived.forEach((device) => {
+                            var d = new Models.Device();
+                            d.Id = device.serial;
+                            d.Type = Helpers.IsNullOrEmpty(device.category) ? "" : device.category.name;
 
-                    try {
-                        response = JSON.parse(dataReceived);
+                            d.IsConnected = device.connected;
+                            d.ConnectedAt = device.connectedAt;
+                            d.DisconnectedAt = device.disconnectedAt;
 
-                        if (!Helpers.IsNullOrEmpty(response)) {
-                            response.forEach((device) => {
-                                var d = new Models.Device();
-                                d.Id = device.serial;
-                                d.Type = Helpers.IsNullOrEmpty(device.category) ? "" : device.category.name;
+                            if (!Helpers.IsNullOrEmpty(device.cameras)) {
+                                device.cameras.forEach((camera) => {
+                                    var c = new Models.Camera();
+                                    c.Name = camera.name;
+                                    c.StreamUrl = camera.urlStream;
+                                    c.LastPicUrl = camera.urlImage;
 
-                                d.IsConnected = device.connected;
-                                d.ConnectedAt = device.connectedAt;
-                                d.DisconnectedAt = device.disconnectedAt;
+                                    d.Cameras.push(c);
+                                });
+                            }
 
-                                if (!Helpers.IsNullOrEmpty(device.cameras)) {
-                                    device.cameras.forEach((camera) => {
-                                        var c = new Models.Camera();
-                                        c.Name = camera.name;
-                                        c.StreamUrl = camera.urlStream;
-                                        c.LastPicUrl = camera.urlImage;
-
-                                        d.Cameras.push(c);
-                                    });
-                                }
-
-                                devicesContainer.push(d);
-                            });
-                            
-                            done();
-                        }
-                    } catch (e) {
-                        done.fail("GetDevices() -> [" + e + "] -> [" + dataReceived + "]");
+                            devicesContainer.push(d);
+                        });
                     }
+
+                    done();
                 },
                 (error) => {
                     done.fail("GetDevices() -> [" + error + "]");
@@ -164,18 +331,57 @@ namespace Autonomia.Client.Sdk {
             );
         }
 
-        public GetNotificationsForDevices(devices: Models.Device[]) {
+        public DeviceGetVideosForCamera(
+            done,
+            token: string,
+            deviceId: string,
+            cameraId: string,
+
+            startTimeInUtc: string,
+            endTimeInUtc: string,
+
+            videosContainer: any
+        ) {
+            var thisRef = this;
+
+            var headers = {
+                "Content-Type": "application/json",
+                "Authorization": token
+            };
+
+            var dataToSend = {
+                "camera" : cameraId,
+                "start": startTimeInUtc,
+                "end": endTimeInUtc,
+                "sign": false
+            };
+
+            Helpers.GetPost.DoPostCall(
+                thisRef.GetUrls_Device_V().V,
+                headers,
+                dataToSend,
+                (dataReceived) => {
+                    videosContainer.Videos = dataReceived;
+                    done();
+                },
+                (error) => {
+                    done.fail("DeviceGetVideosForCamera() -> [" + error + "]");
+                }
+            );
+        }
+
+        public GetNotificationsForDevices(devices: Models.Device[], token: string) {
             var thisRef = this;
 
             devices.forEach((device: Models.Device) => {
-                thisRef.GetWebsocketUrlForDevice(device.Id, thisRef._timeouts.timeout_device_not_attached, function (deviceId, url) {
+                thisRef.GetWebsocketUrlForDevice(device.Id, token, thisRef._timeouts.timeout_device_not_attached, function (deviceId, url) {
 
                     var sslHost = "https://" + Helpers.Uris.Parse(url).Host + "/"
 
                     Helpers.GetPost.DoGetCall(sslHost, {}, (response) => {
-                        thisRef.StartWebsocketForDevice(deviceId, url);
+                        thisRef.StartWebsocketForDevice(deviceId, url, token);
                     }, (error) => {
-                        thisRef.StartWebsocketForDevice(deviceId, url);
+                        thisRef.StartWebsocketForDevice(deviceId, url, token);
                     })
                 });
             });
@@ -212,59 +418,40 @@ namespace Autonomia.Client.Sdk {
             }
         }
 
-        private GetWebsocketUrlForDevice(deviceId: string, waitTimeOut: number, callback) {
+        private GetWebsocketUrlForDevice(deviceId: string, token: string, waitTimeOut: number, callback) {
             var thisRef = this;
 
             var headers = {
                 "Content-Type": "application/json",
-                "Authorization": thisRef._token.Type + " " + thisRef._token.Value
+                "Authorization": token
             };
 
             Helpers.GetPost.DoGetCall(
                 thisRef._urls.Subscribe1 + deviceId + thisRef._urls.Subscribe2,
                 headers,
-                (data) => {
-                    var response = null;
-
-                    try {
-                        response = JSON.parse(data);
-                    } catch (e) { 
-                        // console.error("DEBUG: Device not connected. Retrying in " + waitTimeOut, e, deviceId, data);
-                        thisRef.Events.DeviceConnectionError.Notify({DeviceId: deviceId, 
-                            Error: "Device not connected. Retrying in " + waitTimeOut
-                        });
-
-                        setTimeout(function () {
-                            thisRef.GetWebsocketUrlForDevice(deviceId, waitTimeOut, callback); 
-                        }, waitTimeOut);
-
-                        return;
-                    }
-
-                    if (Helpers.IsNullOrEmpty(response)) {
-                        // console.error();
+                (dataReceived) => {
+                    if (Helpers.IsNullOrEmpty(dataReceived)) {
                         thisRef.Events.DeviceConnectionError.Notify({DeviceId: deviceId, 
                             Error: "GetWebsocketUrlForDevice() -> NULL reply"
                         });
                     }
                     else {
-                        callback(response.device_id, response.url);
+                        callback(dataReceived.device_id, dataReceived.url);
                     }
                 },
                 (error) => {
-                    // console.error("ERROR: Device not connected. Retrying in " + waitTimeOut, deviceId, error);
                     thisRef.Events.DeviceConnectionError.Notify({DeviceId: deviceId, 
                         Error: "ERROR: Device not connected. Retrying in " + waitTimeOut + " -> " + error
                     });
                     
                     setTimeout(function () { 
-                        thisRef.GetWebsocketUrlForDevice(deviceId, waitTimeOut, callback);
+                        thisRef.GetWebsocketUrlForDevice(deviceId, token, waitTimeOut, callback);
                     }, waitTimeOut);
                 }
             );
         }
 
-        private StartWebsocketForDevice(deviceId: string, url: string) {
+        private StartWebsocketForDevice(deviceId: string, url: string, token: string) {
             var thisRef = this;
 
             var webSocket = new WebSocket(url);
@@ -299,8 +486,8 @@ namespace Autonomia.Client.Sdk {
                 thisRef.Events.DeviceDisconnected.Notify({DeviceId: deviceId, Reason: reason});
 
                 setTimeout(function () {
-                    thisRef.GetWebsocketUrlForDevice(deviceId, thisRef._timeouts.timeout_websocket_reconnect, (did, url) => {
-                        thisRef.StartWebsocketForDevice(did, url);
+                    thisRef.GetWebsocketUrlForDevice(deviceId, token, thisRef._timeouts.timeout_websocket_reconnect, (did, url) => {
+                        thisRef.StartWebsocketForDevice(did, url, token);
                     });
                 }, 0);
             };
