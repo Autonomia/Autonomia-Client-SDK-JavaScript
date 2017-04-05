@@ -93,7 +93,8 @@ namespace Autonomia.Client.Sdk {
         private GetUrls_Device(deviceId: string=null, videoKey: string=null ) {
             return {
                 RecordedVideoList: "https://" + this._apiServer + "/v1/api/devices/" + deviceId + "/video",
-                HlsStreamingUrlForVideo: "https://" + this._apiServer + "/v1/api/devices/" + deviceId + "/stream?key=" + videoKey,
+                StreamingUrlForVideo: "https://" + this._apiServer + "/v1/api/devices/" + deviceId + "/stream?key=" + videoKey,
+                DownloadUrlForVideo: "https://" + this._apiServer + "/v1/api/devices/" + deviceId + "/url?key=" + videoKey,
                 MetadataForVideo: "https://" + this._apiServer + "/v1/api/devices/" + deviceId + "/meta?key=" + videoKey
             };
         }
@@ -388,10 +389,38 @@ namespace Autonomia.Client.Sdk {
             };
 
             Helpers.GetPost.DoGetCall(
-                thisRef.GetUrls_Device(deviceId, videoKey).HlsStreamingUrlForVideo,
+                thisRef.GetUrls_Device(deviceId, videoKey).StreamingUrlForVideo,
                 headers,
                 (dataReceived) => {
                     streamingUrlContainer.StreamingUrl = dataReceived.url;
+                    done();
+                },
+                (error) => {
+                    done.fail("DeviceGetVideoStreamingUrl() -> [" + error + "]");
+                }
+            );
+        }
+
+        public DeviceGetVideoDownloadUrl(
+            done,
+            token: string,
+            deviceId: string,
+            videoKey: string,
+
+            downloadUrlContainer: any
+        ) {
+            var thisRef = this;
+
+            var headers = {
+                "Content-Type": "application/json",
+                "Authorization": token
+            };
+
+            Helpers.GetPost.DoGetCall(
+                thisRef.GetUrls_Device(deviceId, videoKey).DownloadUrlForVideo,
+                headers,
+                (dataReceived) => {
+                    downloadUrlContainer.DownloadUrl = dataReceived.url;
                     done();
                 },
                 (error) => {
