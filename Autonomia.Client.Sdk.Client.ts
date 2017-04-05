@@ -1,5 +1,5 @@
 
-/// <reference path="Autonomia.Client.Sdk.Models.Device.ts" /> 
+/// <reference path="Autonomia.Client.Sdk.Models.Device.ts" />
 
 namespace Autonomia.Client.Sdk {
     export class Client {
@@ -17,7 +17,7 @@ namespace Autonomia.Client.Sdk {
             Subscribe1: string
             Subscribe2: string
         }
-        
+
         private _timeouts: {
             timeout_device_not_attached: number,
             timeout_websocket_reconnect: number
@@ -90,9 +90,11 @@ namespace Autonomia.Client.Sdk {
                 T: "https://" + this._apiServer + "/v1/api/auth/token"    // Get Access Token
             };
         }
-        private GetUrls_Device_V(deviceId: string=null) {
+        private GetUrls_Device(deviceId: string=null, videoKey: string=null ) {
             return {
-                V: "https://" + this._apiServer + "/v1/api/devices/" + deviceId + "/video"
+                RecordedVideoList: "https://" + this._apiServer + "/v1/api/devices/" + deviceId + "/video",
+                HlsStreamingUrlForVideo: "https://" + this._apiServer + "/v1/api/devices/" + deviceId + "/stream?key=" + videoKey,
+                MetadataForVideo: "https://" + this._apiServer + "/v1/api/devices/" + deviceId + "/meta?key=" + videoKey
             };
         }
 
@@ -280,7 +282,7 @@ namespace Autonomia.Client.Sdk {
                 (error) => {
                     done.fail("Connect() -> [" + error + "]");
                 }
-            );            
+            );
         }
 
 
@@ -357,7 +359,7 @@ namespace Autonomia.Client.Sdk {
             };
 
             Helpers.GetPost.DoPostCall(
-                thisRef.GetUrls_Device_V().V,
+                thisRef.GetUrls_Device(deviceId).RecordedVideoList,
                 headers,
                 dataToSend,
                 (dataReceived) => {
@@ -366,6 +368,62 @@ namespace Autonomia.Client.Sdk {
                 },
                 (error) => {
                     done.fail("DeviceGetVideosForCamera() -> [" + error + "]");
+                }
+            );
+        }
+
+        public DeviceGetVideoStreamingUrl(
+            done,
+            token: string,
+            deviceId: string,
+            videoKey: string,
+
+            streamingUrlContainer: any
+        ) {
+            var thisRef = this;
+
+            var headers = {
+                "Content-Type": "application/json",
+                "Authorization": token
+            };
+
+            Helpers.GetPost.DoGetCall(
+                thisRef.GetUrls_Device(deviceId, videoKey).HlsStreamingUrlForVideo,
+                headers,
+                (dataReceived) => {
+                    streamingUrlContainer.StreamingUrl = dataReceived.url;
+                    done();
+                },
+                (error) => {
+                    done.fail("DeviceGetVideoStreamingUrl() -> [" + error + "]");
+                }
+            );
+        }
+
+        public DeviceGetVideoMetadata(
+            done,
+            token: string,
+            deviceId: string,
+            videoKey: string,
+
+            metadataContainer: any
+        ) {
+            var thisRef = this;
+
+            var headers = {
+                "Content-Type": "application/json",
+                "Authorization": token
+            };
+
+            Helpers.GetPost.DoGetCall(
+                thisRef.GetUrls_Device(deviceId, videoKey).MetadataForVideo,
+                headers,
+                (dataReceived) => {
+                    metadataContainer.Metadata = dataReceived.metadata;
+                    done();
+                },
+                (error) => {
+                    done.fail("DeviceGetVideoStreamingUrl() -> [" + error + "]");
                 }
             );
         }
@@ -431,7 +489,7 @@ namespace Autonomia.Client.Sdk {
                 headers,
                 (dataReceived) => {
                     if (Helpers.IsNullOrEmpty(dataReceived)) {
-                        thisRef.Events.DeviceConnectionError.Notify({DeviceId: deviceId, 
+                        thisRef.Events.DeviceConnectionError.Notify({DeviceId: deviceId,
                             Error: "GetWebsocketUrlForDevice() -> NULL reply"
                         });
                     }
@@ -440,11 +498,11 @@ namespace Autonomia.Client.Sdk {
                     }
                 },
                 (error) => {
-                    thisRef.Events.DeviceConnectionError.Notify({DeviceId: deviceId, 
+                    thisRef.Events.DeviceConnectionError.Notify({DeviceId: deviceId,
                         Error: "ERROR: Device not connected. Retrying in " + waitTimeOut + " -> " + error
                     });
-                    
-                    setTimeout(function () { 
+
+                    setTimeout(function () {
                         thisRef.GetWebsocketUrlForDevice(deviceId, token, waitTimeOut, callback);
                     }, waitTimeOut);
                 }
@@ -481,8 +539,8 @@ namespace Autonomia.Client.Sdk {
                 else if (event.code == 1010) reason = "An endpoint (client) is terminating the connection because it has expected the server to negotiate one or more extension, but the server didn't return them in the response message of the WebSocket handshake. <br /> Specifically, the extensions that are needed are: " + event.reason;
                 else if (event.code == 1011) reason = "A server is terminating the connection because it encountered an unexpected condition that prevented it from fulfilling the request.";
                 else if (event.code == 1015) reason = "The connection was closed due to a failure to perform a TLS handshake (e.g., the server certificate can't be verified).";
-                else                         reason = "Unknown reason";                
-                
+                else                         reason = "Unknown reason";
+
                 thisRef.Events.DeviceDisconnected.Notify({DeviceId: deviceId, Reason: reason});
 
                 setTimeout(function () {
