@@ -92,6 +92,7 @@ namespace Autonomia.Client.Sdk {
         }
         private GetUrls_Device(deviceId: string=null, videoKey: string=null ) {
             return {
+                PublishToSocial: "https://" + this._apiServer + "/v1/api/devices/" + deviceId + "/publish",
                 RecordedVideoList: "https://" + this._apiServer + "/v1/api/devices/" + deviceId + "/video",
                 StreamingUrlForVideo: "https://" + this._apiServer + "/v1/api/devices/" + deviceId + "/stream?key=" + videoKey,
                 DownloadUrlForVideo: "https://" + this._apiServer + "/v1/api/devices/" + deviceId + "/url?key=" + videoKey,
@@ -304,19 +305,20 @@ namespace Autonomia.Client.Sdk {
                     if (!Helpers.IsNullOrEmpty(dataReceived)) {
                         dataReceived.forEach((device) => {
                             var d = new Models.Device();
-                            d.Id = device.serial;
-                            d.Type = Helpers.IsNullOrEmpty(device.category) ? "" : device.category.name;
+                                d.Id = device.serial;
+                                d.Type = Helpers.IsNullOrEmpty(device.category) ? "" : device.category.name;
 
-                            d.IsConnected = device.connected;
-                            d.ConnectedAt = device.connectedAt;
-                            d.DisconnectedAt = device.disconnectedAt;
+                                d.IsConnected = device.connected;
+                                d.ConnectedAt = device.connectedAt;
+                                d.DisconnectedAt = device.disconnectedAt;
 
                             if (!Helpers.IsNullOrEmpty(device.cameras)) {
                                 device.cameras.forEach((camera) => {
                                     var c = new Models.Camera();
-                                    c.Name = camera.name;
-                                    c.StreamUrl = camera.urlStream;
-                                    c.LastPicUrl = camera.urlImage;
+                                        c.Name = camera.name;
+                                        c.StreamUrl = camera.urlStream;
+                                        c.LastPicUrl = camera.urlImage;
+                                        c.IsStreaming = camera.streaming;
 
                                     d.Cameras.push(c);
                                 });
@@ -362,7 +364,7 @@ namespace Autonomia.Client.Sdk {
             Helpers.GetPost.DoPostCall(
                 thisRef.GetUrls_Device(deviceId).RecordedVideoList,
                 headers,
-                dataToSend,
+                JSON.stringify(dataToSend),
                 (dataReceived) => {
                     videosContainer.Videos = dataReceived;
                     done();
@@ -453,6 +455,42 @@ namespace Autonomia.Client.Sdk {
                 },
                 (error) => {
                     done.fail("DeviceGetVideoStreamingUrl() -> [" + error + "]");
+                }
+            );
+        }
+
+        public DevicePublishCamera(
+            done,
+            token: string,
+            deviceId: string,
+            cameraId: string,
+            platform: string,
+            key: string,
+            responseContainer: any
+        ) {
+            var thisRef = this;
+
+            var headers = {
+                "Content-Type": "application/json",
+                "Authorization": token
+            };
+
+            var dataToSend = {
+                platform: platform,
+                key: key,
+                camera: cameraId
+            };
+
+            Helpers.GetPost.DoPostCall(
+                thisRef.GetUrls_Device(deviceId).PublishToSocial,
+                headers,
+                dataToSend,
+                (dataReceived) => {
+                    responseContainer.Response = dataReceived;
+                    done();
+                },
+                (error) => {
+                    done.fail("DevicePublishCamera() -> [" + error + "]");
                 }
             );
         }

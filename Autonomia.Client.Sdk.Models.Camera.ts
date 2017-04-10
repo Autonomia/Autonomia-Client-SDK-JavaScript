@@ -4,5 +4,6 @@ namespace Autonomia.Client.Sdk.Models {
         public Name: string;
         public StreamUrl: string;
         public LastPicUrl: string;
+        public IsStreaming: boolean;
     }
 }
